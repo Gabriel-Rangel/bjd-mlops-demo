@@ -52,9 +52,12 @@ jobs:
       # DATABRICKS_TF_EXEC_PATH. Sem isso o `bundle deploy` baixa o Terraform da
       # HashiCorp e valida a assinatura PGP — que está com a chave expirada
       # ("openpgp: key expired"). Usar um binário local pula o download/verificação.
+      # A versão precisa bater com a que o Databricks CLI espera (1.5.5), senão ele
+      # recusa o binário local ("expected version is 1.5.5"). 1.5.5 é também a última
+      # versão MPL do Terraform.
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.9.8"
+          terraform_version: "1.5.5"
           terraform_wrapper: false
       - name: Apontar o Databricks CLI para o Terraform local
         run: echo "DATABRICKS_TF_EXEC_PATH=$(which terraform)" >> "$GITHUB_ENV"
