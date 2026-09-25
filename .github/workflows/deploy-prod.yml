@@ -1,9 +1,14 @@
 name: deploy-prod
 
-# Promoção para PROD (bjd_prd):
+# Promoção para PROD (bjd_prd) — o único deploy feito por CI/CD.
+# O ambiente dev é criado manualmente (databricks bundle deploy -t dev), sem branch develop.
+#  - Pull Request p/ main    -> apenas VALIDATE (gate; não faz deploy)
 #  - Push/merge na branch main -> VALIDATE + DEPLOY (target prod)
 #  - Execução manual (workflow_dispatch) permite também RODAR o pipeline
 on:
+  pull_request:
+    branches: [main]
+    paths-ignore: ["**.md"]
   push:
     branches: [main]
     paths-ignore: ["**.md"]
@@ -21,8 +26,25 @@ env:
   DATABRICKS_AUTH_TYPE: oauth-m2m
 
 jobs:
-  prod:
+  # Em PR para main: só valida (não faz deploy). Serve de gate antes do merge.
+  validate:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v0.276.0
+      - name: Conectividade (whoami)
+        run: databricks api get /api/2.0/preview/scim/v2/Me
+      - name: Validate (prod)
+        run: databricks bundle validate --target prod
+
+  # Em push/merge na main (ou dispatch): valida + faz deploy em prod.
+  # environment: production -> exige aprovação manual (required reviewers) antes de rodar,
+  # se o Environment 'production' tiver proteção configurada em Settings -> Environments.
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
       - uses: databricks/setup-cli@v0.276.0

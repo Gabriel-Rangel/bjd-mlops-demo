@@ -19,8 +19,7 @@ src/05_inferencia_tracing_uc.py inferência pontual + @mlflow.trace com traces g
 src/06_tracing_payload_grande_uc.py tracing no UC + payload completo em Volume UC, span guarda só a URI+metadados (padrão p/ payload > 1MB)
 databricks.yml               DAB; targets dev -> bjd_dev, prod -> bjd_prd
 resources/ml_pipeline_job.yml job serverless (00 -> 01 -> 02 -> 03)
-.github/workflows/deploy-dev.yml  CI: validate/deploy no target dev
-.github/workflows/deploy-prod.yml CI: promoção (validate/deploy) no target prod
+.github/workflows/deploy-prod.yml CI: PR->main valida; push->main faz deploy no target prod
 ```
 
 ## Objetos no Unity Catalog
@@ -98,26 +97,36 @@ projeto é a versão enxuta do padrão que o `databricks bundle init mlops-stack
 
 ## CI/CD com GitHub Actions (promoção para PROD)
 
-Workflows em `.github/workflows/`:
-- **`deploy-dev.yml`** — PR para `main` → só `validate`; push em `develop` → `validate` + `deploy` no target **dev** (`bjd_dev`).
-- **`deploy-prod.yml`** — push/merge em `main` → `validate` + `deploy` no target **prod** (`bjd_prd`); execução manual (*workflow_dispatch*) pode ainda rodar o pipeline.
+Único workflow em `.github/workflows/`:
+- **`deploy-prod.yml`** — **PR para `main`** → só `validate` (gate, não faz deploy);
+  **push/merge em `main`** → `validate` + `deploy` no target **prod** (`bjd_prd`);
+  execução manual (*workflow_dispatch*) pode ainda rodar o pipeline.
 
-**Fluxo de promoção (deploy-code):** trabalha em `develop` → CI faz deploy em **dev** →
-abre PR para `main` → ao **mergear em `main`**, o `deploy-prod` promove o mesmo código
-para **prod**.
+**Modelo adotado:** o CI/CD só cuida de **prod**. O ambiente **dev** (`bjd_dev`) é
+implantado **manualmente** pelo próprio autor (`databricks bundle deploy -t dev`, seção
+acima) — não há branch `develop` nem deploy de dev por CI. `main` = produção.
+
+**Fluxo de promoção:** desenvolve numa branch de feature → abre PR para `main`
+(CI **valida**) → ao **mergear em `main`**, o `deploy-prod` promove o código para **prod**.
 
 ### Configuração (uma vez)
 1. **Service principal + OAuth (M2M)** — crie um SP e gere client id/secret OAuth
    (Settings → Identity/Service principals, ou via CLI/conta). Nada de PAT.
-2. **Permissões do SP**: `CAN USE` no workspace; no `bjd_dev` e `bjd_prd`:
+2. **Permissões do SP**: `CAN USE` no workspace; no `bjd_prd`:
    `USE CATALOG`, `USE SCHEMA` + `CREATE SCHEMA`, `CREATE TABLE`, `MODIFY`, `SELECT`,
    `CREATE MODEL`/`EXECUTE`; e permissão para criar Jobs. (Em prod o bundle roda como
    o SP — sem esses grants o pipeline falha ao criar schema/tabela/modelo em `bjd_prd`.)
-3. **No repositório GitHub → Settings**:
+3. **No repositório GitHub → Settings → Secrets and variables → Actions** (nível do repo,
+   *não* precisa de Environments):
    - *Variables*: `DATABRICKS_HOST = https://dbc-463e191a-c656.cloud.databricks.com`
    - *Secrets*: `DATABRICKS_CLIENT_ID`, `DATABRICKS_CLIENT_SECRET`
-4. **Branches**: crie `develop` (trabalho) e `main` (produção); proteja `main` exigindo
-   o check do `deploy-dev` (validate) antes do merge.
+4. **Branch**: proteja `main` exigindo o check `validate` (do PR) antes do merge.
+5. **Gate de aprovação em prod** (já ligado no workflow — o job `deploy` tem
+   `environment: production`): para ele passar a **exigir aprovação**, crie o Environment
+   em **Settings → Environments → New environment → `production`**, marque
+   *Required reviewers* e adicione você (e/ou o time). Sem isso o GitHub cria o environment
+   sem proteção e o deploy roda direto. Os secrets podem ficar no nível do repo (passo 3)
+   ou, se quiser escopar só a prod, cadastrá-los dentro deste Environment.
 
 ### Publicar o repositório (uma vez)
 ```bash
@@ -125,7 +134,6 @@ cd ~/Desktop/bjd-mlops-demo
 git init && git add . && git commit -m "bjd-mlops-demo: bundle + notebooks + CI/CD"
 git branch -M main
 gh repo create bjd-mlops-demo --private --source . --push   # requer gh CLI autenticado
-git checkout -b develop && git push -u origin develop
 ```
 
 ## Outros próximos passos
