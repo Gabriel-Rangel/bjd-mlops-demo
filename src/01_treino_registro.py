@@ -19,6 +19,8 @@ print(f"features={TABELA}\nmodelo={MODELO}")
 
 # COMMAND ----------
 
+
+#### TESTANDO MLFLOW
 import mlflow
 import pandas as pd
 from mlflow.models.signature import infer_signature
