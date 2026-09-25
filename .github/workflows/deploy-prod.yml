@@ -48,6 +48,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: databricks/setup-cli@v0.276.0
+      # Pré-instala o Terraform e aponta o Databricks CLI pra ele via
+      # DATABRICKS_TF_EXEC_PATH. Sem isso o `bundle deploy` baixa o Terraform da
+      # HashiCorp e valida a assinatura PGP — que está com a chave expirada
+      # ("openpgp: key expired"). Usar um binário local pula o download/verificação.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+      - name: Apontar o Databricks CLI para o Terraform local
+        run: echo "DATABRICKS_TF_EXEC_PATH=$(which terraform)" >> "$GITHUB_ENV"
       - name: Conectividade (whoami)
         run: databricks api get /api/2.0/preview/scim/v2/Me
       - name: Validate (prod)
