@@ -31,7 +31,14 @@ mlflow.set_registry_uri("databricks-uc")  # registra no Unity Catalog
 # Experimento ÚNICO do projeto: sem isto, cada notebook (e cada caminho de notebook)
 # cria seu próprio "experimento do notebook". Assim todos os runs caem no mesmo lugar.
 _user = spark.sql("SELECT current_user()").collect()[0][0]
-mlflow.set_experiment(f"/Users/{_user}/bjd-mlops-demo/mlflow_experimento")
+# Em prod o job roda como service principal: current_user() é o Application ID (UUID)
+# e a pasta /Users/<uuid>/bjd-mlops-demo NÃO existe. set_experiment não cria diretórios
+# intermediários, então garantimos o diretório-pai antes (mkdirs é idempotente). Assim
+# funciona tanto interativamente (seu e-mail) quanto no CI (SP).
+from databricks.sdk import WorkspaceClient
+_exp_dir = f"/Users/{_user}/bjd-mlops-demo"
+WorkspaceClient().workspace.mkdirs(_exp_dir)
+mlflow.set_experiment(f"{_exp_dir}/mlflow_experimento")
 client = MlflowClient()
 
 # COMMAND ----------

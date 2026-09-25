@@ -99,8 +99,8 @@ projeto é a versão enxuta do padrão que o `databricks bundle init mlops-stack
 
 Único workflow em `.github/workflows/`:
 - **`deploy-prod.yml`** — **PR para `main`** → só `validate` (gate, não faz deploy);
-  **push/merge em `main`** → `validate` + `deploy` no target **prod** (`bjd_prd`);
-  execução manual (*workflow_dispatch*) pode ainda rodar o pipeline.
+  **push/merge em `main`** → `validate` + `deploy` + **`run` do pipeline** no target
+  **prod** (`bjd_prd`); execução manual (*workflow_dispatch*) faz o mesmo.
 
 **Modelo adotado:** o CI/CD só cuida de **prod**. O ambiente **dev** (`bjd_dev`) é
 implantado **manualmente** pelo próprio autor (`databricks bundle deploy -t dev`, seção
