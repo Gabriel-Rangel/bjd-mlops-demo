@@ -1,0 +1,39 @@
+name: deploy-prod
+
+# Promoção para PROD (bjd_prd):
+#  - Push/merge na branch main -> VALIDATE + DEPLOY (target prod)
+#  - Execução manual (workflow_dispatch) permite também RODAR o pipeline
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md"]
+  workflow_dispatch:
+    inputs:
+      run_job:
+        description: "Rodar o pipeline após o deploy?"
+        type: boolean
+        default: false
+
+env:
+  DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+  DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+  DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+  DATABRICKS_AUTH_TYPE: oauth-m2m
+
+jobs:
+  prod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v0.276.0
+      - name: Conectividade (whoami)
+        run: databricks api get /api/2.0/preview/scim/v2/Me
+      - name: Validate (prod)
+        run: databricks bundle validate --target prod
+      - name: Deploy (prod)
+        run: databricks bundle deploy --target prod --force-lock
+      - name: Summary (prod)
+        run: databricks bundle summary --target prod
+      - name: Run pipeline (opcional, só no dispatch)
+        if: github.event_name == 'workflow_dispatch' && inputs.run_job
+        run: databricks bundle run bjd_mlops_pipeline --target prod

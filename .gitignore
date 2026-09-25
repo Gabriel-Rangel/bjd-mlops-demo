@@ -1,0 +1,20 @@
+# Ambiente virtual local
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Databricks
+.databricks/
+.databricks-login.json
+
+# Editores / SO
+.DS_Store
+*.swp
+
+# Nota: .vscode/settings.json É versionado de propósito (fixa o interpretador
+# e os marcadores de célula da extensão Databricks).

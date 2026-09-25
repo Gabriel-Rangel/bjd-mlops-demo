@@ -1,0 +1,41 @@
+resources:
+  jobs:
+    bjd_mlops_pipeline:
+      name: bjd_mlops_pipeline
+      tags:
+        projeto: bjd-mlops-demo
+
+      tasks:
+        - task_key: setup_dados
+          notebook_task:
+            notebook_path: ../src/00_setup_dados.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+
+        - task_key: treino_registro
+          depends_on:
+            - task_key: setup_dados
+          notebook_task:
+            notebook_path: ../src/01_treino_registro.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+
+        - task_key: avaliacao_promocao
+          depends_on:
+            - task_key: treino_registro
+          notebook_task:
+            notebook_path: ../src/02_avaliacao_promocao.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+
+        - task_key: inferencia_batch
+          depends_on:
+            - task_key: avaliacao_promocao
+          notebook_task:
+            notebook_path: ../src/03_inferencia_batch.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}

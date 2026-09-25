@@ -1,0 +1,23 @@
+# Dependências de RUNTIME dos notebooks (ML clássico).
+#
+# No compute do Databricks (serverless) estas libs JÁ VÊM pré-instaladas.
+# Este arquivo serve para:
+#   1) execução local cell-by-cell via Databricks Connect — o código Python puro
+#      (sklearn.fit, pandas, mlflow.log_model) roda no .venv LOCAL, logo precisa
+#      dessas libs aqui;
+#   2) documentação / reprodutibilidade.
+#
+# Versões escolhidas para um conjunto COERENTE que convive com o databricks-connect
+# 15.4 no mesmo venv (protobuf 6.x) e fica próximo do ambiente serverless atual.
+# IMPORTANTE: não usar mlflow 2.x aqui — ele força protobuf 5.x e quebra o
+# databricks-connect (que exige protobuf 6.x). Por isso mlflow>=3.
+#
+# Skew de versão: um modelo treinado/logado LOCALMENTE e carregado no spark_udf
+# REMOTO (notebook 03) precisa de sklearn/mlflow compatíveis nos dois lados. Para
+# consistência garantida do ciclo completo, rode os notebooks como **Workflow**
+# (tudo no serverless, versões idênticas). O modo local é ótimo p/ dev/exploração.
+
+mlflow>=3.1,<4
+scikit-learn==1.9.1
+numpy==1.26.4
+pandas==2.3.3

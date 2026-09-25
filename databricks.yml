@@ -1,0 +1,35 @@
+bundle:
+  name: bjd-mlops-demo
+
+variables:
+  catalog:
+    description: Catálogo Unity Catalog de destino.
+    default: bjd_dev
+  schema:
+    description: Schema de destino para tabelas e modelo.
+    default: mlops_credito
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-463e191a-c656.cloud.databricks.com
+    variables:
+      catalog: bjd_dev
+      schema: mlops_credito
+
+  # Próximo passo (deploy-code dev->prod). Descomentar quando for promover.
+  prod:
+    mode: production
+    workspace:
+      host: https://dbc-463e191a-c656.cloud.databricks.com
+      # production exige root_path fixo. Usa a identidade que faz o deploy
+      # (você localmente, ou o service principal no CI/CD) — sem prefixo por usuário.
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: bjd_prd
+      schema: mlops_credito

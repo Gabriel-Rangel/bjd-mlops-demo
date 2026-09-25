@@ -1,0 +1,19 @@
+# Dependências de DESENVOLVIMENTO LOCAL (VSCode/Cursor + Databricks Connect).
+# NÃO são as libs de runtime dos notebooks — essas já vêm no compute serverless
+# do Databricks (sklearn, mlflow, numpy, pandas, etc.).
+#
+# Pré-requisitos:
+#   - Python 3.11  (a extensão Databricks exige 3.11 para o serverless;
+#                   databricks-connect 15.4 == Python 3.11 / DBR 15.4 LTS)
+#   - PyPI público bloqueado nesta máquina -> instalar pelo mirror interno
+#     (já configurado em ~/.config/pip/pip.conf apontando p/ pypi-proxy.cloud.databricks.com)
+#
+# Como recriar o ambiente:
+#   /opt/homebrew/bin/python3.11 -m venv .venv
+#   .venv/bin/python -m pip install -r requirements-dev.txt
+#
+# Obs.: use `python -m venv` (tem pip); NÃO crie com `uv venv` (gera venv sem pip,
+# o que quebra a checagem de dependências da extensão Databricks).
+
+databricks-connect==15.4.*
+ipykernel
